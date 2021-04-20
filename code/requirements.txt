@@ -1,0 +1,7 @@
+# Function dependencies, for example:
+# package>=version
+bs4
+lxml
+bokeh
+google-cloud-storage
+pandas
