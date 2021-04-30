@@ -40,14 +40,15 @@ def write_bq(df):
   # client for bq
   bq_client = bigquery.Client(project=BQ_PROJECT)
   # look at datasets, create if needed
-  datum = list(bq_client.list_datasets())
+  datum = []
+  for item in list(bq_client.list_datasets()): datum.append(item.dataset_id)
   if BQ_DATASET not in datum:
     dataset = bigquery.Dataset(bigquery.dataset.DatasetReference(BQ_PROJECT, BQ_DATASET))
     dataset.location = BQ_REGION
     dataset = bq_client.create_dataset(dataset)
   # create or replace table
   bq_job_config = bigquery.LoadJobConfig(schema=[],write_disposition="WRITE_TRUNCATE",)
-  bq_job = bq_client.load_table_from_dataframe(df, "{}.{}.{}".format(BQ_PROJECT,BQ_DATASET,BQTABLE),job_config=bq_job_config)
+  bq_job = bq_client.load_table_from_dataframe(df, "{}.{}.{}".format(BQ_PROJECT,BQ_DATASET,BQ_TABLE),job_config=bq_job_config)
 
 
 def bq_plotter():
