@@ -7,6 +7,7 @@ This project creates [this plot](https://storage.googleapis.com/statmike-interna
 This [Colab](https://gist.github.com/statmike/e87ba9b4c3e810970af7c87bf2d17662) is an interactive walkthrough of the timeline creation.
 - Crawl the BigQuery Release Notes [pages](https://cloud.google.com/bigquery/docs/release-notes) using [urllib](https://docs.python.org/3/library/urllib.html)
 - Parse the html with [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
+- create a BigQuery table to store the timelines (used in other projects)
 - Create a [Bokeh](https://docs.bokeh.org/en/latest/index.html) figure
 
 ## Automate with a Google Cloud Function
