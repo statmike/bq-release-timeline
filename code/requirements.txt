@@ -5,4 +5,5 @@ lxml
 bokeh
 google-cloud-storage
 google-cloud-bigquery
+pyarrow
 pandas
