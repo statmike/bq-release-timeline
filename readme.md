@@ -1,5 +1,7 @@
 # Create A Timeline of BigQuery Release Notes
 
+This project creates [this plot](https://storage.googleapis.com/statmike-internal-site/bq-timeline/bqplot.html): 
+
 ## Code Walkthrough with Colab
 
 This [Colab](https://gist.github.com/statmike/e87ba9b4c3e810970af7c87bf2d17662) is an interactive walkthrough of the timeline creation.
