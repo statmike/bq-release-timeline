@@ -8,6 +8,7 @@ from bokeh.plotting import figure, show, output_file, save
 from bokeh.layouts import column
 from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool
 from google.cloud import storage
+from google.cloud import bigquery
 
 def crawler(product,url):
   header = ["date","release_type","description"]
@@ -26,9 +27,28 @@ def crawler(product,url):
   df = pd.DataFrame(releases,columns=header)
   df.date = df.date.apply(lambda x: datetime.datetime.strptime(x,"%B %d, %Y")) 
   df['product'] = product
-  releasemap = {"release-fixed":"Fix","release-issue":"Issue","release-changed":"Change","release-feature":"Feature"}
+  releasemap = {"release-fixed":"Fix","release-issue":"Issue","release-changed":"Change","release-feature":"Feature","release-announcement":"Announcement"}
   df['release_type'].replace(releasemap, inplace=True)
   return df
+
+def write_bq():
+  # parameters
+  BQ_PROJECT = 'statmike-internal-site'
+  BQ_DATASET = 'RELEASE_NOTES'
+  BQ_TABLE = 'BQ_Release_Notes'
+  BQ_REGION = 'us-central1'
+  # client for bq
+  bq_client = bigquery.Client(project=BQ_PROJECT)
+  # look at datasets, create if needed
+  datum = list(bq_client.list_datasets())
+  if BQ_DATASET not in datum:
+    dataset = bigquery.Dataset(bigquery.dataset.DatasetReference(BQ_PROJECT, BQ_DATASET))
+    dataset.location = BQ_REGION
+    dataset = bq_client.create_dataset(dataset)
+  # create or replace table
+  bq_job_config = bigquery.LoadJobConfig(schema=[],write_disposition="WRITE_TRUNCATE",)
+  bq_job = bq_client.load_table_from_dataframe(df, "{}.{}.{}".format(BQ_PROJECT,BQ_DATASET,BQTABLE),job_config=bq_job_config)
+
 
 def bq_plotter():
   pdict = {"bq":"BigQuery","bqml":"BigQuery ML","bqbi":"BigQuery BI Engine","bqdt":"BigQuery Data Transfer Service"}
@@ -39,6 +59,9 @@ def bq_plotter():
 
   df = pd.concat([bq,bqml,bqbi,bqdt], axis=0, ignore_index=True)
   df = df.sort_values(by=['date'], ascending=False)
+
+  # update the BQ table with this info - replaces
+  write_bq()
 
   colormap = {"bq":"#4285F4", "bqml":"#EA4335", "bqbi":"#FBBC04", "bqdt":"#34A853"}
   source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'],
