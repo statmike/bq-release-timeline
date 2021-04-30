@@ -31,7 +31,7 @@ def crawler(product,url):
   df['release_type'].replace(releasemap, inplace=True)
   return df
 
-def write_bq():
+def write_bq(df):
   # parameters
   BQ_PROJECT = 'statmike-internal-site'
   BQ_DATASET = 'RELEASE_NOTES'
@@ -61,7 +61,7 @@ def bq_plotter():
   df = df.sort_values(by=['date'], ascending=False)
 
   # update the BQ table with this info - replaces
-  write_bq()
+  write_bq(df)
 
   colormap = {"bq":"#4285F4", "bqml":"#EA4335", "bqbi":"#FBBC04", "bqdt":"#34A853"}
   source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'],
