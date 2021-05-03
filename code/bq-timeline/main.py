@@ -113,7 +113,7 @@ def bq_plotter():
 
   ## trigger pub/sub topic bq-forecast
   pub_client = pubsub_v1.PublisherClient()
-  topic = pub_client.topic_path(PROJECT,'bq-forecast')
+  topic = pub_client.topic_path('statmike-internal-site','bq-forecast')
   mess = 'Proceed with Forecast'
   future = pub_client(topic,mess.encode("utf-8"))
 
