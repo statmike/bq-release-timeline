@@ -115,7 +115,7 @@ def bq_plotter():
   pub_client = pubsub_v1.PublisherClient()
   topic = pub_client.topic_path('statmike-internal-site','bq-forecast')
   mess = 'Proceed with Forecast'
-  future = pub_client(topic,mess.encode("utf-8"))
+  future = pub_client.publish(topic,mess.encode("utf-8"))
 
 
 def bq_timeline(event, context):
