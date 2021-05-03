@@ -142,12 +142,11 @@ def bq_plotter(PROJECT,DATASET,TABLE,REGION):
 
     #loop over products and display glyphs (circles), use CDSView to create view of product subset from source
     for prod in df['product'].unique():
-    view = CDSView(source=source, filters=[GroupFilter(column_name='product', group=prod)])
-    p.circle('date','release',source=source, view=view, line_color=None, size=10, fill_color='colors', legend_label=pdict[prod], name='p_primary')
-    # add forecast data
-    viewF = CDSView(source=sourceF, filters=[GroupFilter(column_name='product', group=prod)])
-    p.circle('target','release',source=sourceF, view=viewF, line_color=None, size=10, fill_color='colors', name='p_target')
-
+        view = CDSView(source=source, filters=[GroupFilter(column_name='product', group=prod)])
+        p.circle('date','release',source=source, view=view, line_color=None, size=10, fill_color='colors', legend_label=pdict[prod], name='p_primary')
+        # add forecast data
+        viewF = CDSView(source=sourceF, filters=[GroupFilter(column_name='product', group=prod)])
+        p.circle('target','release',source=sourceF, view=viewF, line_color=None, size=10, fill_color='colors', name='p_target')
 
     # configure legend
     p.legend.location='top_left'
