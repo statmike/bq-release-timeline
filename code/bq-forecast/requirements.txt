@@ -1,9 +1,9 @@
 # Function dependencies, for example:
 # package>=version
+bs4
+lxml
 bokeh
 google-cloud-storage
 google-cloud-bigquery
-google-cloud-bigquery-storage
 pyarrow
 pandas
-numpy
