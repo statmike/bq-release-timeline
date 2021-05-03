@@ -135,7 +135,7 @@ def bq_plotter(PROJECT,DATASET,TABLE,REGION):
 
     # main plot = p
     p = figure(title="Big Query Release Notes With Forecasted Next Note",
-            plot_height=300, plot_width=800, tools=["xpan",p_hover,target_hover,targetL_hover,targetU_hover], toolbar_location=None,
+            plot_height=300, plot_width=800, tools=["xpan",p_hover,target_hover], toolbar_location=None,
             x_axis_type="datetime", x_axis_location="above", 
             background_fill_color="#F8F9FA", y_range=ycats, x_range=(df.date[100], forecast.targetU.max()))
     p.yaxis.axis_label = 'Release Type'
