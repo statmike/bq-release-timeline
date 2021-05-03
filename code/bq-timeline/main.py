@@ -9,6 +9,7 @@ from bokeh.layouts import column
 from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool
 from google.cloud import storage
 from google.cloud import bigquery
+from google.cloud import pubsub_v1
 
 def crawler(product,url):
   header = ["date","release_type","description"]
@@ -109,6 +110,12 @@ def bq_plotter():
   blob = bucket.blob('bq-timeline/bqplot.html')
   blob.upload_from_filename('/tmp/bqplot.html')
   blob.make_public()
+
+  ## trigger pub/sub topic bq-forecast
+  pub_client = pubsub_v1.PublisherClient()
+  topic = pub_client.topic_path(PROJECT,'bq-forecast')
+  mess = 'Proceed with Forecast'
+  future = pub_client(topic,mess.encode("utf-8"))
 
 
 def bq_timeline(event, context):
