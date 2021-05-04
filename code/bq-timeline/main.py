@@ -59,36 +59,48 @@ def bq_plotter():
   bqbi = crawler('bqbi','https://cloud.google.com/bi-engine/docs/release-notes')
   bqdt = crawler('bqdt','https://cloud.google.com/bigquery-transfer/docs/release-notes')
 
+  # combine the product data and sort by date descending
   df = pd.concat([bq,bqml,bqbi,bqdt], axis=0, ignore_index=True)
-  df = df.sort_values(by=['date'], ascending=False)
+  df = df.sort_values(by=['date'], ascending=False, ignore_index=True)
 
-  # update the BQ table with this info - replaces
+  # update the BQ table with this info - replaces the previous run
   write_bq(df)
 
+  # create the timeline plot
+  # dictionaries for poduct labels and colors
+  pdict = {"bq":"BigQuery","bqml":"BigQuery ML","bqbi":"BigQuery BI Engine","bqdt":"BigQuery Data Transfer Service"}
   colormap = {"bq":"#4285F4", "bqml":"#EA4335", "bqbi":"#FBBC04", "bqdt":"#34A853"}
+
+  # define the source data for the plot
   source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'],
                                       product=df['product'], productname=[pdict[x] for x in df['product']],
                                       colors=[colormap[x] for x in df['product']]))
   ycats = df.release_type.unique()
 
-  tooltips = [("","@product"),("","@tip")]
+  # format date for tooltips
+  source.add(df['date'].apply(lambda d: d.strftime('%m/%d/%Y')),'date_pretty')
 
-  # main plot
+  # create hover tools
+  p_hover = HoverTool(mode='mouse', line_policy='nearest', names=['p_primary'],
+                      tooltips=[("","@date_pretty @productname"),("","@tip")])
+
+  # main plot = p
   p = figure(title="Big Query Release Notes",
-            plot_height=300, plot_width=800, tools="xpan", toolbar_location=None,
-            x_axis_type="datetime", x_axis_location="above", tooltips=[("","@productname"),("","@tip")],
+            plot_height=300, plot_width=800, tools=["xpan",p_hover], toolbar_location=None,
+            x_axis_type="datetime", x_axis_location="above", 
             background_fill_color="#F8F9FA", y_range=ycats, x_range=(df.date[100], df.date[0]))
   p.yaxis.axis_label = 'Release Type'
 
   #loop over products and display glyphs (circles), use CDSView to create view of product subset from source
   for prod in df['product'].unique():
     view = CDSView(source=source, filters=[GroupFilter(column_name='product', group=prod)])
-    p.circle('date','release',source=source, view=view, line_color=None, size=10, fill_color='colors', legend_label=pdict[prod])
+    p.circle('date','release',source=source, view=view, line_color=None, size=10, fill_color='colors', legend_label=pdict[prod], name='p_primary')
 
+  # configure legend
   p.legend.location='top_left'
   p.legend.click_policy="hide"
 
-  # selection tool
+  # selection tool below chart = select
   select = figure(title="Drag the middle and edges of the selection box to change the range above",
                   plot_height=130, plot_width=800, y_range=p.y_range,
                   x_axis_type="datetime", y_axis_type=None,
@@ -105,6 +117,7 @@ def bq_plotter():
   output_file("/tmp/bqplot.html")
   save(full)
 
+  # Store the plot in GCS
   storage_client = storage.Client(project='statmike-internal-site')
   bucket = storage_client.get_bucket('statmike-internal-site')
   blob = bucket.blob('bq-timeline/bqplot.html')
