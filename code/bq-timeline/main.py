@@ -6,13 +6,13 @@ import pandas as pd
 import datetime as datetime
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.layouts import column
-from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool
+from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool, TapTool, OpenURL
 from google.cloud import storage
 from google.cloud import bigquery
 from google.cloud import pubsub_v1
 
 def crawler(product,url):
-  header = ["date","release_type","description"]
+  header = ["date","release_type","description","hyperlink"]
   releases = []
   html = urlopen(url)
   pot = BeautifulSoup(html,'lxml')
@@ -21,10 +21,11 @@ def crawler(product,url):
   for spoon in spoons:
     if spoon.name == 'h2':
       keep_date = spoon.text #get('data-text')
+      keep_link = url.strip()+'#'+spoon.get('id')
     if spoon.name == 'div':
       keep_type = spoon.get('class')[0]
       keep_disc = spoon.findNext('p').text
-      releases.append([keep_date,keep_type,keep_disc])
+      releases.append([keep_date,keep_type,keep_disc,keep_link])
   df = pd.DataFrame(releases,columns=header)
   df.date = df.date.apply(lambda x: datetime.datetime.strptime(x,"%B %d, %Y")) 
   df['product'] = product
@@ -72,7 +73,7 @@ def bq_plotter():
   colormap = {"bq":"#4285F4", "bqml":"#EA4335", "bqbi":"#FBBC04", "bqdt":"#34A853"}
 
   # define the source data for the plot
-  source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'],
+  source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'], url=df['hyperlink'],
                                       product=df['product'], productname=[pdict[x] for x in df['product']],
                                       colors=[colormap[x] for x in df['product']]))
   ycats = df.release_type.unique()
@@ -86,7 +87,7 @@ def bq_plotter():
 
   # main plot = p
   p = figure(title="Big Query Release Notes",
-            plot_height=300, plot_width=800, tools=["xpan",p_hover], toolbar_location=None,
+            plot_height=300, plot_width=800, tools=["xpan","tap",p_hover], toolbar_location=None,
             x_axis_type="datetime", x_axis_location="above", 
             background_fill_color="#F8F9FA", y_range=ycats, x_range=(df.date[100], df.date[0]))
   p.yaxis.axis_label = 'Release Type'
@@ -95,6 +96,11 @@ def bq_plotter():
   for prod in df['product'].unique():
     view = CDSView(source=source, filters=[GroupFilter(column_name='product', group=prod)])
     p.circle('date','release',source=source, view=view, line_color=None, size=10, fill_color='colors', legend_label=pdict[prod], name='p_primary')
+
+  # configure taptool
+  url="@url"
+  taptool = p.select(type=TapTool)
+  taptool.callback = OpenURL(url=url)
 
   # configure legend
   p.legend.location='top_left'
