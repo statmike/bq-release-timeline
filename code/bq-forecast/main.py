@@ -10,7 +10,7 @@ from google.cloud import bigquery_storage
 
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.layouts import column
-from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool
+from bokeh.models import CDSView, GroupFilter, ColumnDataSource, RangeTool, HoverTool, TapTool, OpenURL
 
 
 def bq_data(PROJECT,DATASET,TABLE,REGION):
@@ -60,12 +60,12 @@ def bq_data(PROJECT,DATASET,TABLE,REGION):
             )
             SELECT *
             FROM RETRIEVE
-            WHERE DATE(time_series_timestamp) < CURRENT_DATE()),
+            WHERE DATE(time_series_timestamp) < DATE_ADD(CURRENT_DATE(), INTERVAL 7 DAY)),
         MATCH AS(
             SELECT product, MAX(DATE(time_series_timestamp)) as match_date
             FROM FORECAST
             GROUP by product
-            HAVING match_date < CURRENT_DATE()
+            HAVING match_date < DATE_ADD(CURRENT_DATE(), INTERVAL 7 DAY)
         )
         SELECT *
         FROM
@@ -109,14 +109,18 @@ def bq_plotter(PROJECT,DATASET,TABLE,REGION):
     colormap = {"bq":"#4285F4", "bqml":"#EA4335", "bqbi":"#FBBC04", "bqdt":"#34A853"}
 
     # define the source data for the plot
-    source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'],
+    source = ColumnDataSource(data=dict(date=df['date'], release=df['release_type'], tip=df['description'], url=df['hyperlink'],
                                         product=df['product'], productname=[pdict[x] for x in df['product']],
                                         colors=[colormap[x] for x in df['product']]))
     ycats = df.release_type.unique()
     ycats = np.append(ycats,forecast['release_type'][0])
 
+    # helpful link for forecasted timepoint for each product - this explains the forecasting method ARIMA_PLUS
+    forecast['hyperlink'] = 'https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-time-series'
+
     # define the source data for the forecast
     sourceF = ColumnDataSource(data=dict(release=forecast['release_type'], product=forecast['product'], productnameF=[pdict[x] for x in forecast['product']],
+                                        url=forecast['hyperlink'],
                                         target=forecast['target'], targetL=forecast['targetL'], targetU=forecast['targetU'], tipF=forecast['description'], 
                                         colors=[colormap[x] for x in forecast['product']]))
 
@@ -135,7 +139,7 @@ def bq_plotter(PROJECT,DATASET,TABLE,REGION):
 
     # main plot = p
     p = figure(title="Big Query Release Notes With Forecasted Next Note",
-            plot_height=300, plot_width=800, tools=["xpan",p_hover,target_hover], toolbar_location=None,
+            plot_height=300, plot_width=800, tools=["xpan","tap",p_hover,target_hover], toolbar_location=None,
             x_axis_type="datetime", x_axis_location="above", 
             background_fill_color="#F8F9FA", y_range=ycats, x_range=(df.date[100], forecast.targetU.max()))
     p.yaxis.axis_label = 'Release Type'
@@ -147,6 +151,11 @@ def bq_plotter(PROJECT,DATASET,TABLE,REGION):
         # add forecast data
         viewF = CDSView(source=sourceF, filters=[GroupFilter(column_name='product', group=prod)])
         p.circle('target','release',source=sourceF, view=viewF, line_color=None, size=10, fill_color='colors', name='p_target')
+
+    # configure taptool
+    url="@url"
+    taptool = p.select(type=TapTool)
+    taptool.callback = OpenURL(url=url)
 
     # configure legend
     p.legend.location='top_left'
