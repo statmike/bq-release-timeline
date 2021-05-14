@@ -1,0 +1,10 @@
+steps:
+- name: 'docker.io/library/python:3.9'
+  entrypoint: /bin/sh
+  # Run pip install and pytest in the same build step
+  # (pip packages won't be preserved in future steps!)
+  args: [-c, 'pip install -r requirements.txt && pytest']
+  dir: 'code/bq-timeline'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['functions', 'deploy', 'bq-timeline', '--trigger-topic', 'bq-timeline', '--runtime', 'python39', '--entry-point', 'bq-timeline']
+  dir: 'code/bq-timeline'
