@@ -11,6 +11,7 @@ from google.cloud import storage
 from google.cloud import bigquery
 from google.cloud import pubsub_v1
 
+
 def crawler(product,url):
   header = ["date","release_type","description","hyperlink"]
   releases = []
@@ -32,6 +33,7 @@ def crawler(product,url):
   releasemap = {"release-fixed":"Fix","release-issue":"Issue","release-changed":"Change","release-feature":"Feature","release-announcement":"Announcement"}
   df['release_type'].replace(releasemap, inplace=True)
   return df
+
 
 def write_bq(df):
   # parameters
