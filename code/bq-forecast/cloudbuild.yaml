@@ -1,0 +1,4 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['functions', 'deploy', 'bq-forecast', '--trigger-topic', 'bq-forecast', '--runtime', 'python39', '--entry-point', 'bq_forecast']
+  dir: 'code/bq-forecast'
